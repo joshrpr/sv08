@@ -6,10 +6,7 @@
 [include ./RGB_LEDs.cfg]
 [include My_Macros.cfg]
 [skew_correction] 
-[include ./Demon_Klipper_Essentials_Unified/*.cfg]
-[include ./Demon_User_Files/*.cfg]
-[include ./Demon_Klipper_Essentials_Unified/Other_Files/Demon_User_Files_Updater/Demon_User_Files_Handler_v*.cfg]
-#[soak_my_bed]
+[soak_my_bed]
 #[include ./Demon_Klipper_Essentials_Unified/*.cfg]
 #[include ./Demon_User_Files/*.cfg]
 # [include ./Demon_Klipper_Essentials_Unified/Other_Files/Demon_User_Files_Updater/Extract_Demon_User_Files_Sovol.cfg]
@@ -248,15 +245,10 @@ hysteresis: 5
 heating_gain: 2               
 
 [filament_switch_sensor filament_sensor]
+pause_on_runout: True
+event_delay: 3.0
+pause_delay: 0.5
 switch_pin: PE9
-pause_on_runout: False
-insert_gcode:
-    { action_respond_info("Insert Detected") }  
-runout_gcode:
-    { action_respond_info("Runout Detected") }
-    {% if printer.print_stats.state == "printing" %}
-      _FIL_CHANGE_PARK
-    {% endif %}
 
 [thermistor my_thermistor]
 temperature1:25
@@ -286,36 +278,32 @@ heating_gain: 2
 
 ###############################################################
 ######################## EDDY NG ##############################
-[mcu eddy]
-#FOR USB: replace this with your serial port ID
-#FOR CANBUS: replace this with your canbus UUID
-serial: /dev/serial/by-id/usb-Klipper_rp2040_5044466778A59D1C-if00
-restart_method: command
+#[mcu eddy]
+# FOR USB: replace this with your serial port ID
+# FOR CANBUS: replace this with your canbus UUID
+#serial: /dev/serial/by-id/usb-Klipper_rp2040_5044466778A59D1C-if00
+#restart_method: command
 
-[probe_eddy_ng btt_eddy]
-sensor_type: btt_eddy
-i2c_mcu: eddy
-i2c_bus: i2c0f
-tap_target_z: -0.350
-x_offset: -16 # INSERT VALUE FOR YOUR PROBE POSITION
-y_offset: 11.5 # INSERT VALUE FOR YOUR PROBE POSITION 
+#[probe_eddy_ng btt_eddy]
+#sensor_type: btt_eddy
+#i2c_mcu: eddy
+#i2c_bus: i2c0f
+#tap_target_z: -0.350
+#x_offset: -16 # INSERT VALUE FOR YOUR PROBE POSITION
+#y_offset: 11.5 # INSERT VALUE FOR YOUR PROBE POSITION 
 
 
-[temperature_sensor btt_eddy_mcu]
-sensor_type: temperature_mcu
-sensor_mcu: eddy
-min_temp: 10
-max_temp: 100
+#[temperature_sensor btt_eddy_mcu]
+#sensor_type: temperature_mcu
+#sensor_mcu: eddy
+#min_temp: 10
+#max_temp: 100
 
-[temperature_sensor btt_eddy]
-sensor_type: Generic 3950
-sensor_pin: eddy:gpio26
+#[temperature_sensor btt_eddy]
+#sensor_type: Generic 3950
+#sensor_pin: eddy:gpio26
 
-# [safe_z_home]
-# home_xy_position: 75,75
-# speed: 90.0
-# z_hop: 5
-# z_hop_speed: 10.0
+
 
 # PLEASE REMOVE THIS WHEN USING EDDY
 #[probe]
@@ -327,41 +315,6 @@ sensor_pin: eddy:gpio26
 #y_offset: 0
 #z_offset : 0
 #speed: 1.0
-
-[homing_override]
-gcode:
-   {% if not 'Z' in params and not 'Y' in params and 'X' in params %}
-     G28 X
-     G0 X191 F3600
-   {% elif not 'Z' in params and not 'X' in params and 'Y' in params %}
-     G28 Y
-     G0 Y165  F3600
-   {% elif not 'Z' in params and 'X' in params and 'Y' in params %}
-     G28 Y
-     G0 Y165  F3600
-     G4 P2000
-     G28 X
-     G0 X191  F3600
-   {% elif 'Z' in params and not 'X' in params and not 'Y' in params %}
-     G90
-     G0 X191 Y165 F3600
-     G28 Z
-     G0  Z10 F600
-   {% else %}
-     G90
-     G0 Z5 F300
-     G28 Y
-     G0 Y165  F3600
-     G4 P2000
-     G28 X
-     G0 X191  F3600
-     G90
-     G0  X191 Y165 F3600
-     G28 Z
-     G0  Z10 F600
-   {% endif %}
-axes: xyz
-set_position_z: 0
 
 [bed_mesh]
 speed: 150 #500
@@ -484,6 +437,9 @@ max_temp: 110
 sensor_type: temperature_mcu
 sensor_mcu: extra_mcu
 
+[pause_resume]
+
+[exclude_object]
 
 #[adxl345]
 #cs_pin:extra_mcu:PB12
@@ -506,6 +462,8 @@ shaper_freq_x = 73.4
 shaper_type_y = mzv
 shaper_freq_y = 41.6
 
+#[save_variables]
+#filename = ~/printer_data/config/saved_variables.cfg
 
 [board_pins]
 aliases:
@@ -554,26 +512,55 @@ cs_pin:extra_mcu:PB12
 
 [resonance_tester]
 accel_chip: adxl345
-probe_points:
-    175, 175, 30
-accel_per_hz: 50
-min_freq: 1
-max_freq: 200
-max_smoothing: 0.2
-hz_per_sec: 0.5
+probe_points: 175, 175, 30  # an example175 Y175 Z30
+accel_per_hz:50
+min_freq:1
+max_freq:100
+max_smoothing:0.2
+hz_per_sec:0.5
 
+[include shell_command.cfg]
+[shaketune]
+result_folder: ~/printer_data/config/ShakeTune_results
+#    Path where the processed results will be stored. If the folder doesn't exist,
+#    it will be automatically created. You can change this if you'd like to store 
+#    results in a different location.
+number_of_results_to_keep: 10
+#    This setting defines how many results you want to keep in the result folder.
+#    Once the specified number is exceeded, older results will be automatically deleted
+#    to free up space on the SD card and avoid cluttering the results folder.
+keep_raw_data: False
+#    If set to True, Shake&Tune will store both the processed graphs and the raw accelerometer
+#    .stdata files in the results folder. This can be useful for debugging or archiving purposes.
+#    Please always attach them when reporting any issues on GitHub or Discord.
+show_macros_in_webui: True
+#    Mainsail and Fluidd doesn't create buttons for system commands (macros that are not part
+#    of the printer.cfg file). This option allow Shake&Tune to inject them into the webui at runtime.
+#    If set to False, the macros will be hidden but still accessible from the console by typing
+#    their names manually, which can be useful if you prefer to encapsulate them into your own macros.
+timeout: 600
+#    This defines the maximum processing time (in seconds) to allows to Shake&Tune for generating 
+#    graphs from a .stdata file. 10 minutes should be more than enough in most cases, but if you have
+#    slower hardware (e.g., older SD cards or low-performance devices), increase it to prevent timeouts.
+measurements_chunk_size: 2
+#    Each Shake&Tune command uses the accelerometer to take multiple measurements. By default,
+#    Shake&Tune will write a chunk of data to disk every two measurements, and at the end of the
+#    command will merge these chunks into the final .stdata file for processing. "2" is a very
+#    conservative setting to avoid Klipper Timer Too Close errors on lower end devices with little
+#    RAM, and should work for everyone. However, if you are using a powerful computer, you may
+#    wish to increase this value to keep more measurements in memory (e.g., 15-20) before writing
+#    the chunk and avoid stressing the filesystem too much.
+max_freq: 200
+#    This setting defines the maximum frequency at which the calculation of the power spectral density
+#    is cutoff. The default value should be fine for most machines and accelerometer combinations and
+#    avoid touching it unless you know what you're doing.
+dpi: 300
+#    Controls the resolution of the generated graphs. The default value of 300 dpi was optimized
+#    and strikes a balance between performance and readability, ensuring that graphs are clear
+#    without using too much RAM to generate them. Usually, you shouldn't need to change this value.
 
 #*# <---------------------- SAVE_CONFIG ---------------------->
-#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-generated.
-#*#
-#*# [probe_eddy_ng btt_eddy]
-#*# calibrated_drive_currents = 15, 16
-#*# calibration_version = 5
-#*# reg_drive_current = 15
-#*# tap_drive_current = 16
-#*# calibration_15 = gASVywMAAAAAAAB9lCiMAXaUSwWMBGZ0b2iUjBtudW1weS5wb2x5bm9taWFsLnBvbHlub21pYWyUjApQb2x5bm9taWFslJOUKYGUfZQojARjb2VmlIwWbnVtcHkuX2NvcmUubXVsdGlhcnJheZSMDF9yZWNvbnN0cnVjdJSTlIwFbnVtcHmUjAduZGFycmF5lJOUSwCFlEMBYpSHlFKUKEsBSwqFlGgMjAVkdHlwZZSTlIwCZjiUiYiHlFKUKEsDjAE8lE5OTkr/////Sv////9LAHSUYolDUPSHcyVj0/o/H/mTR0zr/j/skgKOXoXjPxOMlSKkReA/snVxroNjyz8Pq7Zj2rrRv63xq7zw0Fk/TvVOWMWy1z/fJn4zXgiqP8rCEkcvk7a/lHSUYowGZG9tYWlulGgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQa9OOKiy8lD64nJ2JUfKUPpR0lGKMBndpbmRvd5RoC2gOSwCFlGgQh5RSlChLAUsChZRoGIlDEAAAAAAAAPC/AAAAAAAA8D+UdJRijAdfc3ltYm9slIwBeJSMBnN5bWJvbJRoLHVijAlmdG9oX2hpZ2iUaAUpgZR9lChoCGgLaA5LAIWUaBCHlFKUKEsBSwqFlGgYiUNQUHb2s/46G0CV7M9XgWYKQMPbtr2BdvY/t83K640g8D/65Pk6VpT/P0WK3T7d2PQ/F1CjHSZ7/r+0tB0HRab5v9ahVyPjEvk/lwDukFE09T+UdJRiaB1oC2gOSwCFlGgQh5RSlChLAUsChZRoGIlDEAG9RfYN8JQ+RxcCvF4AlT6UdJRiaCRoC2gOSwCFlGgQh5RSlChLAUsChZRoGIlDEAAAAAAAAPC/AAAAAAAA8D+UdJRiaCtoLGgtaCx1YowEaHRvZpRoBSmBlH2UKGgIaAtoDksAhZRoEIeUUpQoSwFLCoWUaBiJQ1B43iIYuOGUPr8De8i01Rg+ARiWYYc7B74NaOfUffTyPVscxT6aa+M9JIPaG+mU/L0MdlYxMOjjvVXW7rxhsP89tPfJkICk0j396F0Ek3jqvZR0lGJoHWgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQgJniNkFsuz/ml1OPVvITQJR0lGJoJGgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQAAAAAAAA8L8AAAAAAADwP5R0lGJoK2gsaC1oLHVijAdoX3JhbmdllF2UKEc/u2xBNuKZgEdALgAAAAAAAWWMB2ZfcmFuZ2WUXZQoR0FIYRgdyuAAR0FIsUcP3SAAZYwCZGOUSw91Lg==
-#*# calibration_16 = gASVywMAAAAAAAB9lCiMAXaUSwWMBGZ0b2iUjBtudW1weS5wb2x5bm9taWFsLnBvbHlub21pYWyUjApQb2x5bm9taWFslJOUKYGUfZQojARjb2VmlIwWbnVtcHkuX2NvcmUubXVsdGlhcnJheZSMDF9yZWNvbnN0cnVjdJSTlIwFbnVtcHmUjAduZGFycmF5lJOUSwCFlEMBYpSHlFKUKEsBSwqFlGgMjAVkdHlwZZSTlIwCZjiUiYiHlFKUKEsDjAE8lE5OTkr/////Sv////9LAHSUYolDUNDniR16HPc/fveL6n0u/j/5XTnwa83lP765QJWnnNw/choSHM+31z89IZLYveuiv7PcV2Qlx9C/TRCcLIe20j8A9pD+yjrQP9YkpbhF3bq/lHSUYowGZG9tYWlulGgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQJA2FC1G/lD7Hls/Q1wiVPpR0lGKMBndpbmRvd5RoC2gOSwCFlGgQh5RSlChLAUsChZRoGIlDEAAAAAAAAPC/AAAAAAAA8D+UdJRijAdfc3ltYm9slIwBeJSMBnN5bWJvbJRoLHVijAlmdG9oX2hpZ2iUaAUpgZR9lChoCGgLaA5LAIWUaBCHlFKUKEsBSwqFlGgYiUNQJN/gDCcLG0CP8jSxswcKQEUGYmhO9vo/jS+nW069/z8qDUGqKlLYPy2GsrZ00AzAxfhajQIx8T9M/LzKQTQaQMc+54hkjbi/KpsUaEVRB8CUdJRiaB1oC2gOSwCFlGgQh5RSlChLAUsChZRoGIlDEAA6cOZSBpU+5wrSyIoYlT6UdJRiaCRoC2gOSwCFlGgQh5RSlChLAUsChZRoGIlDEAAAAAAAAPC/AAAAAAAA8D+UdJRiaCtoLGgtaCx1YowEaHRvZpRoBSmBlH2UKGgIaAtoDksAhZRoEIeUUpQoSwFLCoWUaBiJQ1DbFnrRs/SUPgCQ6AUdnx8+Ev8GSnyXD7498WJpajr3PffxO+iTIui9hDJDrI0A2T3A5oPSQWjyPYEHqkuglva9MUQTPYKL4r26Txus8krrPZR0lGJoHWgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQIFBk6D5FQz/mbSkDDPATQJR0lGJoJGgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQAAAAAAAA8L8AAAAAAADwP5R0lGJoK2gsaC1oLHVijAdoX3JhbmdllF2UKEc/Q0U+6GRQIEdALf7yoMzlQWWMB2ZfcmFuZ2WUXZQoR0FIRSjx3zAAR0FIrYkiJIgAZYwCZGOUSxB1Lg==
-#*#
+#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-gUKGgIaAtoDksAhZRoEIeUUpQoSwFLCoWUaBiJQ1DbFnrRs/SUPgCQ6AUdnx8+Ev8GSnyXD7498WJpajr3PffxO+iTIui9hDJDrI0A2T3A5oPSQWjyPYEHqkuglva9MUQTPYKL4r26Txus8krrPZR0lGJoHWgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQIFBk6D5FQz/mbSkDDPATQJR0lGJoJGgLaA5LAIWUaBCHlFKUKEsBSwKFlGgYiUMQAAAAAAAA8L8AAAAAAADwP5R0lGJoK2gsaC1oLHVijAdoX3JhbmdllF2UKEc/Q0U+6GRQIEdALf7yoMzlQWWMB2ZfcmFuZ2WUXZQoR0FIRSjx3zAAR0FIrYkiJIgAZYwCZGOUSxB1Lg==
 #*#
 #*# [extruder]
 #*# control = pid
